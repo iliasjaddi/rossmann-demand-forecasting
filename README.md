@@ -22,6 +22,28 @@ exclude them.
 
 ![Model against baseline on the sealed test window](docs/figures/01_headline.png)
 
+### External check
+
+The same model scored 0.11480 RMSPE on the Kaggle private leaderboard. Kaggle
+holds the labels for that period, so nothing in this repository has seen them.
+
+Before the submission, `src/submit_kaggle.py` estimated the score from the
+local test window. It predicted 0.11670. The estimate was 1.6% pessimistic.
+
+| | RMSPE |
+|---|---|
+| Estimate from the local test window | 0.11670 |
+| Kaggle private score | 0.11480 |
+| Kaggle public score | 0.10739 |
+| Competition winner, private | 0.10021 |
+
+The estimate came from a model trained through 2015-04-26. The submitted model
+was retrained on all labelled data through 2015-07-31. The extra three months
+explain the small improvement.
+
+This match is the point of the local holdout. A split that leaks produces an
+optimistic estimate and a worse leaderboard score. This one did the opposite.
+
 ---
 
 ## The problem
@@ -225,6 +247,44 @@ standard deviations wide.
 
 The deployed model is `no_lags`. Among the variants that tie, it is the
 smallest: 41 features instead of 47, and 407 rounds instead of 609.
+
+### The best constant multiplier is always below 1 under RMSPE
+
+Kaggle scores this competition with RMSPE, the root mean squared percentage
+error. Many entries multiply their predictions by about 0.985.
+`src/submit_kaggle.py` does not copy that number. It measures the effect on
+the local test window:
+
+```
+x0.970   0.11687
+x0.975   0.11670   <- best
+x0.980   0.11675
+x0.985   0.11701
+x1.000   0.11912
+```
+
+The best multiplier here is 0.975, worth 2.03%.
+
+The total forecast was 0.9967 of the total actual, so the model was already
+predicting low. The best multiplier is still below 1. This is not a bias
+correction.
+
+RMSPE weights each squared error by 1 / y squared. Minimising it over a scalar
+f gives:
+
+```
+f* = E[y_hat / y] / E[y_hat^2 / y^2]
+```
+
+By the Cauchy-Schwarz inequality this ratio is below 1 whenever y_hat / y has
+any variance. Any model with any error therefore has an optimal multiplier
+below 1. The exact value depends on how large the error is. 0.975 for this
+model and 0.985 for another are both correct.
+
+The multiplier improves the leaderboard score, not the business outcome. A
+forecast that is 2.5% low every day causes stockouts, and an empty shelf sells
+nothing. A production system would drop the multiplier, or replace the point
+forecast with quantiles and let the ordering policy choose the service level.
 
 ## Correctness tests
 
@@ -432,6 +492,11 @@ not using recursive prediction.
 One model covers the whole horizon. The accuracy at day 1 and at day 42 is not
 separated. Models for each part of the horizon would probably be better at
 short range. They would need seven models to train, record and serve.
+
+The Kaggle scores support this. The public score is 0.10739 and the private
+score is 0.11480. If Kaggle split those two sets by date, the gap measures the
+loss of accuracy as the forecast reaches further from the last known sale.
+This is the first thing to test with per-horizon models.
 
 The serving table is static. The features are calculated in advance and stored
 in the image. A production system would rebuild them on a schedule as new
