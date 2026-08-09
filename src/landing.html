@@ -7,7 +7,15 @@
 
      Colours come from a validated categorical palette. Slot 1 (blue) marks the
      model, slot 2 (orange) marks the baseline, and grey marks the actuals.
+
+     The document has no explicit <head>. The meta tags below sit at the top of
+     the file so the parser hoists them into the implicit head and link-preview
+     crawlers read them before any other markup.
 -->
+<meta property="og:title" content="Rossmann Demand Forecasting — Live Demo">
+<meta property="og:description" content="42-day sales forecasts for 1,115 stores. 8.63% MAPE, 53% below baseline. LightGBM, FastAPI, Cloud Run.">
+<meta property="og:image" content="https://raw.githubusercontent.com/iliasjaddi/rossmann-demand-forecasting/main/docs/figures/og_card.png">
+<meta property="og:url" content="https://rossmann.iliasjaddi.com/">
 <style>
   :root {
     color-scheme: light;

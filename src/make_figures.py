@@ -293,6 +293,65 @@ def fig_promo_cycle():
     print("  04_promo_cycle.png")
 
 
+# ---------------------------------------------------------------------------
+# 5. Link preview card
+# ---------------------------------------------------------------------------
+def fig_og_card(test):
+    """Open Graph card at exactly 1200x630.
+
+    Separate from 01_headline because the two have different jobs. The README
+    figure is wide and bare, because the prose around it supplies the context.
+    A link preview arrives with no prose, so this one carries its own title,
+    and it must hit 1.91:1 or the crawlers crop it.
+
+    Do not pass bbox_inches="tight" here. That trims the canvas and the output
+    stops being 1200x630.
+    """
+    m = evaluate(test.Sales.to_numpy(), test.pred.to_numpy(), test.Open.to_numpy())
+    b = evaluate(test.Sales.to_numpy(), test.base.to_numpy(), test.Open.to_numpy())
+
+    panels = [("RMSE", "euros", b["rmse"], m["rmse"], "{:,.0f}"),
+              ("MAPE", "percent", b["mape"], m["mape"], "{:.2f}%"),
+              ("WAPE", "percent", b["wape"], m["wape"], "{:.2f}%")]
+
+    fig = plt.figure(figsize=(7.5, 3.9375))  # 7.5 x 160 = 1200, 3.9375 x 160 = 630
+    axes = fig.subplots(1, 3)
+
+    fig.text(0.055, 0.90, "Rossmann Demand Forecasting", fontsize=19,
+             color=INK, fontweight="bold", ha="left", va="center")
+    fig.text(0.055, 0.815, "42-day horizon over 1,115 stores, scored once on a "
+             "sealed test window", fontsize=10.5, color=INK_2, ha="left",
+             va="center")
+
+    for ax, (name, unit, bv, mv, fmt) in zip(axes, panels):
+        bars = ax.bar([0, 1], [bv, mv], width=0.55,
+                      color=[INK_3, BLUE], zorder=3)
+        for r, v in zip(bars, [bv, mv]):
+            ax.text(r.get_x() + r.get_width() / 2, v, fmt.format(v),
+                    ha="center", va="bottom", fontsize=10, color=INK,
+                    fontweight="medium")
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(["baseline", "LightGBM"], fontsize=9)
+        ax.set_ylim(0, max(bv, mv) * 1.25)
+        ax.set_title(f"{name}  ({unit})", fontsize=10, color=INK_2,
+                     loc="left", pad=10)
+        ax.grid(axis="x", visible=False)
+        ax.set_yticks([])
+        clean(ax, keep_left=False)
+        drop = (1 - mv / bv) * 100
+        ax.text(0.5, -0.20, f"−{drop:.1f}%", transform=ax.transAxes,
+                ha="center", fontsize=11, color=BLUE, fontweight="bold")
+
+    fig.text(0.055, 0.055, "LightGBM  ·  MLflow  ·  FastAPI  ·  Cloud Run",
+             fontsize=10, color=INK_3, ha="left", va="center")
+
+    fig.subplots_adjust(left=0.055, right=0.965, top=0.66, bottom=0.20,
+                        wspace=0.28)
+    fig.savefig(FIG / "og_card.png")
+    plt.close(fig)
+    print("  og_card.png")
+
+
 def main():
     FIG.mkdir(parents=True, exist_ok=True)
     print("writing figures:")
@@ -301,6 +360,7 @@ def main():
     fig_forecast(test)
     fig_ablation()
     fig_promo_cycle()
+    fig_og_card(test)
     print(f"\nwrote to {FIG}")
 
 
