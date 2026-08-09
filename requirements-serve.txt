@@ -1,0 +1,11 @@
+# Serving dependencies only. Deliberately excludes mlflow, statsmodels,
+# scikit-learn and matplotlib: the container serves a trained model, it does
+# not train one. Separate dependency sets keep the image small, the cold start
+# fast, and the attack surface narrow.
+fastapi==0.141.1
+uvicorn==0.52.1
+pydantic==2.13.4
+lightgbm==4.7.0
+pandas==2.3.3
+numpy==2.5.1
+pyarrow==25.0.0

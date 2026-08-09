@@ -1,0 +1,349 @@
+<!-- Landing page for the forecast service.
+
+     api.py reads this file at startup and replaces the {{TOKEN}} placeholders
+     with the live model metadata. Keep the file self-contained: no external
+     stylesheet, script or font. The container must serve it with no network
+     access of its own.
+
+     Colours come from a validated categorical palette. Slot 1 (blue) marks the
+     model, slot 2 (orange) marks the baseline, and grey marks the actuals.
+-->
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fcfcfb;
+    --panel: #ffffff;
+    --line: #e6e5e1;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #8b8a85;
+    --model: #2a78d6;
+    --baseline: #eb6834;
+    --good: #1baf7a;
+    --shade: rgba(42, 120, 214, 0.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #1a1a19;
+      --panel: #222221;
+      --line: #383835;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #8b8a85;
+      --model: #3987e5;
+      --baseline: #d95926;
+      --good: #199e70;
+      --shade: rgba(57, 135, 229, 0.12);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
+  h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 { font-size: 1rem; margin: 2.75rem 0 .9rem; font-weight: 600; letter-spacing: -.01em; }
+  .lede { color: var(--ink-2); margin: 0 0 2rem; max-width: 44rem; }
+  a { color: var(--model); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .75rem; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: .9rem 1rem;
+  }
+  .stat .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); }
+  .stat .v { font-size: 1.6rem; font-weight: 650; letter-spacing: -.02em; margin-top: .15rem; }
+  .stat .n { font-size: .78rem; color: var(--ink-2); }
+  .v.model { color: var(--model); }
+  .v.good  { color: var(--good); }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 1.15rem 1.25rem;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: .7rem; align-items: flex-end; }
+  label { display: block; font-size: .74rem; text-transform: uppercase;
+          letter-spacing: .06em; color: var(--ink-3); margin-bottom: .3rem; }
+  input, select, button {
+    font: inherit; font-size: .92rem; padding: .45rem .6rem;
+    border: 1px solid var(--line); border-radius: 7px;
+    background: var(--bg); color: var(--ink);
+  }
+  button {
+    background: var(--model); color: #fff; border-color: transparent;
+    cursor: pointer; font-weight: 550; padding: .45rem 1.1rem;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .55; cursor: default; }
+
+  .legend { display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: .82rem;
+            color: var(--ink-2); margin: .9rem 0 .2rem; }
+  .legend i { display: inline-block; width: 14px; height: 2.5px;
+              border-radius: 2px; vertical-align: middle; margin-right: .4rem; }
+  .msg { color: var(--ink-2); font-size: .88rem; margin-top: .8rem; }
+  .msg.err { color: var(--baseline); }
+
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: .42rem .7rem; text-align: right; border-bottom: 1px solid var(--line); }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+       color: var(--ink-3); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; }
+  .scroll { overflow-x: auto; }
+  ul.links { list-style: none; padding: 0; margin: .4rem 0 0; }
+  ul.links li { margin: .35rem 0; }
+  .muted { color: var(--ink-2); font-size: .88rem; }
+  footer { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+           color: var(--ink-3); font-size: .82rem; }
+</style>
+
+<div class="wrap">
+  <h1>Rossmann demand forecast</h1>
+  <p class="lede">
+    Daily sales for 1,115 drugstores, up to a 42 day horizon. Gradient boosted
+    trees on <code>log1p(sales)</code>, {{N_FEATURES}} features,
+    {{N_ROUNDS}} boosting rounds. Scored once on a test window that no training
+    step used.
+  </p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="k">Model MAPE</div>
+      <div class="v model">{{MAPE}}%</div>
+      <div class="n">test window</div>
+    </div>
+    <div class="stat">
+      <div class="k">Baseline MAPE</div>
+      <div class="v">{{BASE_MAPE}}%</div>
+      <div class="n">seasonal median</div>
+    </div>
+    <div class="stat">
+      <div class="k">Error reduction</div>
+      <div class="v good">{{IMPROVE}}%</div>
+      <div class="n">against baseline</div>
+    </div>
+    <div class="stat">
+      <div class="k">RMSE</div>
+      <div class="v">{{RMSE}}</div>
+      <div class="n">euros per day</div>
+    </div>
+  </div>
+
+  <h2>Try a forecast</h2>
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label for="store">Store</label>
+        <input id="store" type="number" value="262" min="1" max="1115" style="width:7rem">
+      </div>
+      <div>
+        <label for="from">From</label>
+        <input id="from" type="date" value="2015-07-06"
+               min="{{SERVE_FROM}}" max="{{SERVE_TO}}">
+      </div>
+      <div>
+        <label for="to">To</label>
+        <input id="to" type="date" value="2015-07-26"
+               min="{{SERVE_FROM}}" max="{{SERVE_TO}}">
+      </div>
+      <button id="go">Forecast</button>
+      <div style="flex:1"></div>
+      <div>
+        <label for="preset">Example</label>
+        <select id="preset">
+          <option value="known">Dates with known sales</option>
+          <option value="unseen">Dates nobody has seen</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:var(--model)"></i>forecast</span>
+      <span><i style="background:var(--ink-3)"></i>actual</span>
+      <span><i style="background:var(--shade);height:10px;width:14px"></i>promotion day</span>
+    </div>
+
+    <svg id="chart" viewBox="0 0 860 260" width="100%" role="img"
+         aria-label="Forecast against actual sales"></svg>
+    <div id="msg" class="msg"></div>
+
+    <div class="scroll" style="margin-top:1rem">
+      <table id="tbl"></table>
+    </div>
+  </div>
+
+  <h2>Model card</h2>
+  <div class="scroll">
+    <table>
+      <tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Algorithm</td><td>LightGBM, {{N_ROUNDS}} rounds, {{N_FEATURES}} features</td></tr>
+      <tr><td>Target</td><td>log1p(sales), trading days only</td></tr>
+      <tr><td>Trained through</td><td>{{TRAINED_THROUGH}}</td></tr>
+      <tr><td>Servable range</td><td>{{SERVE_FROM}} to {{SERVE_TO}}</td></tr>
+      <tr><td>Stores</td><td>{{N_STORES}}</td></tr>
+      <tr><td>Test RMSE / MAPE / WAPE</td><td>{{RMSE}} / {{MAPE}}% / {{WAPE}}%</td></tr>
+      <tr><td>Baseline RMSE / MAPE / WAPE</td><td>{{BASE_RMSE}} / {{BASE_MAPE}}% / {{BASE_WAPE}}%</td></tr>
+    </table>
+  </div>
+  <p class="muted">
+    The upper date bound is 48 days after the last day of sales history. Every
+    feature is at least 48 days old by design, so the service needs no
+    recursive feedback. It also cannot see past that date, and returns a 400
+    if you ask it to.
+  </p>
+
+  <h2>Endpoints</h2>
+  <ul class="links">
+    <li><a href="/docs">/docs</a> <span class="muted">— OpenAPI interface</span></li>
+    <li><a href="/health">/health</a> <span class="muted">— model provenance and metrics</span></li>
+    <li><a href="/stores">/stores</a> <span class="muted">— store IDs this service can forecast</span></li>
+    <li><code>GET|POST /predict</code> <span class="muted">— store_id, start_date, end_date</span></li>
+  </ul>
+
+  <footer>
+    Public dataset (Rossmann Store Sales). Dates are historical: the model
+    forecasts 2015. Closed days return exactly 0 and are excluded from every
+    metric.
+  </footer>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const PRESETS = {
+    known:  { store: 262, from: "2015-07-06", to: "2015-07-26" },
+    unseen: { store: 262, from: "2015-08-03", to: "2015-08-23" },
+  };
+
+  $("preset").addEventListener("change", (e) => {
+    const p = PRESETS[e.target.value];
+    $("store").value = p.store; $("from").value = p.from; $("to").value = p.to;
+    run();
+  });
+  $("go").addEventListener("click", run);
+
+  function fmt(n) { return n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+
+  async function run() {
+    const s = $("store").value, a = $("from").value, b = $("to").value;
+    $("go").disabled = true;
+    $("msg").className = "msg";
+    $("msg").textContent = "loading…";
+    try {
+      const r = await fetch(`/predict?store_id=${s}&start_date=${a}&end_date=${b}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || "request failed");
+      draw(d);
+      const acc = d.mape_vs_actual === null
+        ? "These dates have no published sales, so there is nothing to compare against."
+        : `Mean absolute percentage error over this window: ${d.mape_vs_actual}%.`;
+      $("msg").textContent =
+        `${d.n_days} days, ${d.n_trading_days} trading. ` +
+        `Total forecast ${fmt(d.total_predicted_sales)} euros. ${acc}`;
+    } catch (err) {
+      $("chart").innerHTML = ""; $("tbl").innerHTML = "";
+      $("msg").className = "msg err";
+      $("msg").textContent = String(err.message || err);
+    } finally {
+      $("go").disabled = false;
+    }
+  }
+
+  function draw(d) {
+    const rows = d.forecast;
+    const W = 860, H = 260, L = 58, R = 14, T = 16, B = 34;
+    const iw = W - L - R, ih = H - T - B;
+    const vals = [];
+    rows.forEach(r => {
+      if (r.open) vals.push(r.predicted_sales);
+      if (r.actual_sales !== null && r.open) vals.push(r.actual_sales);
+    });
+    const hi = Math.max(...vals) * 1.08, lo = 0;
+    const x = i => L + (rows.length === 1 ? iw / 2 : (i / (rows.length - 1)) * iw);
+    const y = v => T + ih - ((v - lo) / (hi - lo)) * ih;
+
+    const css = getComputedStyle(document.documentElement);
+    const cModel = css.getPropertyValue("--model").trim();
+    const cInk3  = css.getPropertyValue("--ink-3").trim();
+    const cLine  = css.getPropertyValue("--line").trim();
+    const cInk2  = css.getPropertyValue("--ink-2").trim();
+    const cShade = css.getPropertyValue("--shade").trim();
+
+    let g = "";
+
+    // Promotion days as a background band. Drawn first so marks sit on top.
+    rows.forEach((r, i) => {
+      if (!r.promo) return;
+      const half = rows.length > 1 ? iw / (rows.length - 1) / 2 : 8;
+      g += `<rect x="${x(i) - half}" y="${T}" width="${half * 2}" height="${ih}"
+             fill="${cShade}"/>`;
+    });
+
+    // Horizontal grid, four steps, recessive.
+    for (let k = 0; k <= 4; k++) {
+      const v = lo + (hi - lo) * k / 4;
+      g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"
+             stroke="${cLine}" stroke-width="1"/>`;
+      g += `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end"
+             fill="${cInk2}" font-size="11">${fmt(v)}</text>`;
+    }
+
+    // Closed days break the line rather than dropping it to zero.
+    const path = (key, colour, dash) => {
+      let dstr = "", pen = false;
+      rows.forEach((r, i) => {
+        const v = key === "p" ? r.predicted_sales : r.actual_sales;
+        if (!r.open || v === null) { pen = false; return; }
+        dstr += (pen ? "L" : "M") + x(i) + " " + y(v) + " ";
+        pen = true;
+      });
+      return dstr
+        ? `<path d="${dstr}" fill="none" stroke="${colour}" stroke-width="2"
+             stroke-linejoin="round" stroke-linecap="round"
+             ${dash ? `stroke-dasharray="${dash}"` : ""}/>`
+        : "";
+    };
+    g += path("a", cInk3, "5 4");
+    g += path("p", cModel, "");
+
+    rows.forEach((r, i) => {
+      if (!r.open) return;
+      g += `<circle cx="${x(i)}" cy="${y(r.predicted_sales)}" r="3.2"
+             fill="${cModel}"><title>${r.date}: forecast ${fmt(r.predicted_sales)}${
+               r.actual_sales !== null ? ", actual " + fmt(r.actual_sales) : ""
+             }</title></circle>`;
+    });
+
+    // Date labels: first, last, and roughly every seventh day.
+    rows.forEach((r, i) => {
+      if (i !== 0 && i !== rows.length - 1 && i % 7 !== 0) return;
+      g += `<text x="${x(i)}" y="${H - 12}" text-anchor="middle"
+             fill="${cInk2}" font-size="11">${r.date.slice(5)}</text>`;
+    });
+
+    $("chart").innerHTML = g;
+
+    const hasActual = rows.some(r => r.actual_sales !== null);
+    $("tbl").innerHTML =
+      `<tr><th>Date</th><th>Open</th><th>Promo</th><th>Forecast</th>` +
+      (hasActual ? `<th>Actual</th><th>Error</th>` : ``) + `</tr>` +
+      rows.map(r => `<tr>
+        <td>${r.date}</td>
+        <td>${r.open ? "yes" : "no"}</td>
+        <td>${r.promo ? "yes" : "no"}</td>
+        <td>${fmt(r.predicted_sales)}</td>` +
+        (hasActual ? `<td>${r.actual_sales === null ? "—" : fmt(r.actual_sales)}</td>
+        <td>${r.absolute_percentage_error === null ? "—"
+              : r.absolute_percentage_error + "%"}</td>` : ``) +
+      `</tr>`).join("");
+  }
+
+  run();
+})();
+</script>

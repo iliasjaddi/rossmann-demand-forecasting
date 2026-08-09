@@ -1,0 +1,19 @@
+# What gets uploaded to Cloud Build.
+#
+# IMPORTANT: gcloud does NOT read .dockerignore. If this file is absent it
+# synthesises one from .gitignore, which would exclude
+# serving/serving_features.parquet, and the Docker build would then fail on
+# COPY. Hence an explicit list.
+.venv/
+mlruns/
+mlartifacts/
+mlflow.db
+features.parquet
+*.csv
+*.zip
+__pycache__/
+*.pyc
+.git/
+.DS_Store
+
+# serving/ is deliberately NOT excluded: the image is built from it.

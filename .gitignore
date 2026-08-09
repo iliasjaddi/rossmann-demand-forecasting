@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Generated artifacts. Regenerate with the commands in the README.
+features.parquet
+mlflow.db
+mlruns/
+mlartifacts/
+
+# Source data: download from Kaggle (rossmann-store-sales)
+train.csv
+test.csv
+store.csv
+sample_submission.csv
+*.zip
+
+# serving/ IS committed (about 16 MB total). It holds the trained booster, the
+# frozen categories and the precomputed feature table, so `docker build` works
+# straight after a clone without retraining anything.
+
+# Kaggle submission output. Regenerate with src/submit_kaggle.py
+submission.csv

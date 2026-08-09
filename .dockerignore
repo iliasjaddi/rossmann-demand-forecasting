@@ -1,0 +1,15 @@
+# Keep the build context small. Everything the image needs is listed
+# explicitly in the Dockerfile; this stops the 38 MB of CSVs, the MLflow
+# database and the local venv from being shipped to the daemon.
+.venv/
+mlruns/
+mlartifacts/
+mlflow.db
+*.csv
+*.zip
+features.parquet
+__pycache__/
+*.pyc
+.git/
+.DS_Store
+notebooks/
