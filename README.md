@@ -3,9 +3,9 @@
 Daily sales forecasts for 1,115 drugstores. The horizon is 42 days. A
 containerised API serves the forecasts from Cloud Run.
 
-Live: https://rossmann-forecast-1024147309293.europe-west1.run.app
-([docs](https://rossmann-forecast-1024147309293.europe-west1.run.app/docs) ·
-[sample forecast](https://rossmann-forecast-1024147309293.europe-west1.run.app/predict?store_id=262&start_date=2015-07-06&end_date=2015-07-12))
+Live: https://rossmann.iliasjaddi.com/
+([docs](https://rossmann.iliasjaddi.com//docs) ·
+[sample forecast](https://rossmann.iliasjaddi.com/predict?store_id=262&start_date=2015-07-06&end_date=2015-07-12))
 
 Result on the test window: 8.63% MAPE. The seasonal baseline scores 18.56%.
 The error is 53.5% lower. No step before the final one used this window.
